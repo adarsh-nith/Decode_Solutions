@@ -1,7 +1,43 @@
+import { useState } from "react";
 import { motion } from "motion/react";
 import { ArrowRight, BookOpen, Briefcase, CheckCircle2, Code, Database, FileText, GraduationCap, Layout, Monitor, Server, Users } from "lucide-react";
 
 export function Home() {
+  const [proposalOpen, setProposalOpen] = useState(false);
+  const [formData, setFormData] = useState({ institute: "", contact: "", email: "" });
+  const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
+
+  const GOOGLE_SHEET_ENDPOINT = "https://script.google.com/macros/s/AKfycbz8LOoT1_w1mYYmlt91zegQTO_S6_zA2UxOeV3v9zJyQuntu7xwbuNiGejEcrrFitbTNA/exec";
+  const submitProposal = async (event: any) => {
+    event.preventDefault();
+    setStatus("submitting");
+
+    try {
+      const body = new URLSearchParams({
+        institute: formData.institute,
+        contact: formData.contact,
+        email: formData.email,
+        timestamp: new Date().toISOString(),
+      });
+
+      await fetch(GOOGLE_SHEET_ENDPOINT, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: body.toString(),
+      });
+
+      // With mode: "no-cors", the response is opaque (can't read status).
+      // If fetch didn't throw, the request was sent successfully.
+      setStatus("success");
+      setFormData({ institute: "", contact: "", email: "" });
+      setTimeout(() => setProposalOpen(false), 2000);
+    } catch (error) {
+      console.error("Proposal submission error:", error);
+      setStatus("error");
+    }
+  };
+
   const features = [
     {
       icon: <Code className="w-6 h-6 text-brand-600" />,
@@ -51,7 +87,7 @@ export function Home() {
               <span className="flex h-2 w-2 rounded-full bg-brand-500"></span>
               Partnering with Top Engineering Colleges
             </motion.div>
-            
+
             <motion.h1
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -60,7 +96,7 @@ export function Home() {
             >
               Crack Top Tech Placements with <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-400 to-brand-600">Decode Solutions</span>
             </motion.h1>
-            
+
             <motion.p
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -69,7 +105,7 @@ export function Home() {
             >
               We tie up with colleges to provide end-to-end training in DSA, Core CS subjects, and interview preparation, ensuring students are industry-ready.
             </motion.p>
-            
+
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -156,7 +192,7 @@ export function Home() {
               <p className="text-lg text-slate-600 mb-8">
                 We act as an extension of your college's placement cell, providing specialized technical training that bridges the gap between academic curriculum and industry demands.
               </p>
-              
+
               <div className="space-y-6">
                 {[
                   "Customized curriculum aligned with your academic calendar",
@@ -173,12 +209,12 @@ export function Home() {
               </div>
 
               <div className="mt-10">
-                <a href="#contact" className="inline-flex items-center gap-2 px-6 py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-semibold transition-colors">
+                <button onClick={() => setProposalOpen(true)} className="inline-flex items-center gap-2 px-6 py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-semibold transition-colors">
                   Request a Proposal <ArrowRight className="w-4 h-4" />
-                </a>
+                </button>
               </div>
             </div>
-            
+
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-tr from-brand-100 to-brand-50 rounded-3xl transform rotate-3 scale-105"></div>
               <div className="relative bg-white p-8 rounded-3xl border border-slate-200 shadow-xl">
@@ -232,6 +268,56 @@ export function Home() {
           </div>
         </div>
       </section>
+
+      {proposalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md bg-white rounded-2xl p-6 shadow-2xl relative">
+            <button onClick={() => setProposalOpen(false)} className="absolute top-3 right-3 text-slate-500 hover:text-slate-900">
+              ✕
+            </button>
+            <h3 className="text-2xl font-bold mb-4">Request a Proposal</h3>
+            <form onSubmit={submitProposal} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700">Institute Name</label>
+                <input
+                  value={formData.institute}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, institute: e.target.value }))}
+                  required
+                  className="mt-1 w-full border border-slate-300 rounded-lg px-3 py-2"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700">Contact Number</label>
+                <input
+                  value={formData.contact}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, contact: e.target.value }))}
+                  required
+                  className="mt-1 w-full border border-slate-300 rounded-lg px-3 py-2"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700">Email</label>
+                <input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
+                  required
+                  className="mt-1 w-full border border-slate-300 rounded-lg px-3 py-2"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={status === "submitting"}
+                className="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-2 rounded-lg"
+              >
+                {status === "submitting" ? "Submitting..." : "Submit"}
+              </button>
+              {status === "success" && <div className="text-sm text-green-600">Submitted successfully. We will contact you soon.</div>}
+              {status === "error" && <div className="text-sm text-red-600">Submission failed. Please try again.</div>}
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

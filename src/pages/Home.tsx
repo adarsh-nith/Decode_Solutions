@@ -6,10 +6,67 @@ export function Home() {
   const [proposalOpen, setProposalOpen] = useState(false);
   const [formData, setFormData] = useState({ institute: "", contact: "", email: "" });
   const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
+  const [errors, setErrors] = useState<{ contact?: string; email?: string }>({});
+  const [touched, setTouched] = useState<{ contact?: boolean; email?: boolean }>({});
 
   const GOOGLE_SHEET_ENDPOINT = "https://script.google.com/macros/s/AKfycbz8LOoT1_w1mYYmlt91zegQTO_S6_zA2UxOeV3v9zJyQuntu7xwbuNiGejEcrrFitbTNA/exec";
+
+  // Validation helpers
+  const validateContact = (value: string): string | undefined => {
+    if (!value) return "Contact number is required";
+    const digitsOnly = value.replace(/\D/g, "");
+    if (digitsOnly.length !== 10) return "Enter a valid 10-digit phone number";
+    if (!/^[6-9]/.test(digitsOnly)) return "Phone number must start with 6, 7, 8, or 9";
+    return undefined;
+  };
+
+  const validateEmail = (value: string): string | undefined => {
+    if (!value) return "Email is required";
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(value)) return "Enter a valid email address";
+    return undefined;
+  };
+
+  const handleContactChange = (value: string) => {
+    // Allow only digits (strip non-numeric characters as user types)
+    const cleaned = value.replace(/\D/g, "").slice(0, 10);
+    setFormData((prev) => ({ ...prev, contact: cleaned }));
+    if (touched.contact) {
+      setErrors((prev) => ({ ...prev, contact: validateContact(cleaned) }));
+    }
+  };
+
+  const handleEmailChange = (value: string) => {
+    setFormData((prev) => ({ ...prev, email: value }));
+    if (touched.email) {
+      setErrors((prev) => ({ ...prev, email: validateEmail(value) }));
+    }
+  };
+
+  const handleBlur = (field: "contact" | "email") => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+    const value = formData[field];
+    const validator = field === "contact" ? validateContact : validateEmail;
+    setErrors((prev) => ({ ...prev, [field]: validator(value) }));
+  };
+
+  const isFormValid = () => {
+    const contactError = validateContact(formData.contact);
+    const emailError = validateEmail(formData.email);
+    return !contactError && !emailError && formData.institute.trim() !== "";
+  };
+
   const submitProposal = async (event: any) => {
     event.preventDefault();
+
+    // Validate all fields before submitting
+    const contactError = validateContact(formData.contact);
+    const emailError = validateEmail(formData.email);
+    setErrors({ contact: contactError, email: emailError });
+    setTouched({ contact: true, email: true });
+
+    if (contactError || emailError) return;
+
     setStatus("submitting");
 
     try {
@@ -31,6 +88,8 @@ export function Home() {
       // If fetch didn't throw, the request was sent successfully.
       setStatus("success");
       setFormData({ institute: "", contact: "", email: "" });
+      setErrors({});
+      setTouched({});
       setTimeout(() => setProposalOpen(false), 2000);
     } catch (error) {
       console.error("Proposal submission error:", error);
@@ -289,21 +348,32 @@ export function Home() {
               <div>
                 <label className="block text-sm font-medium text-slate-700">Contact Number</label>
                 <input
+                  type="tel"
+                  placeholder="e.g. 9876543210"
                   value={formData.contact}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, contact: e.target.value }))}
+                  onChange={(e) => handleContactChange(e.target.value)}
+                  onBlur={() => handleBlur("contact")}
                   required
-                  className="mt-1 w-full border border-slate-300 rounded-lg px-3 py-2"
+                  className={`mt-1 w-full border rounded-lg px-3 py-2 ${touched.contact && errors.contact ? "border-red-400 focus:ring-red-400" : "border-slate-300"}`}
                 />
+                {touched.contact && errors.contact && (
+                  <p className="mt-1 text-xs text-red-500">{errors.contact}</p>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700">Email</label>
                 <input
                   type="email"
+                  placeholder="e.g. name@example.com"
                   value={formData.email}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
+                  onChange={(e) => handleEmailChange(e.target.value)}
+                  onBlur={() => handleBlur("email")}
                   required
-                  className="mt-1 w-full border border-slate-300 rounded-lg px-3 py-2"
+                  className={`mt-1 w-full border rounded-lg px-3 py-2 ${touched.email && errors.email ? "border-red-400 focus:ring-red-400" : "border-slate-300"}`}
                 />
+                {touched.email && errors.email && (
+                  <p className="mt-1 text-xs text-red-500">{errors.email}</p>
+                )}
               </div>
               <button
                 type="submit"

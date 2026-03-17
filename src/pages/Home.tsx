@@ -2,8 +2,7 @@ import { useState } from "react";
 import { motion } from "motion/react";
 import { ArrowRight, BookOpen, Briefcase, CheckCircle2, Code, Database, FileText, GraduationCap, Layout, Monitor, Server, Users } from "lucide-react";
 
-export function Home() {
-  const [proposalOpen, setProposalOpen] = useState(false);
+export function Home({ proposalOpen, setProposalOpen }: { proposalOpen: boolean; setProposalOpen: (v: boolean) => void }) {
   const [formData, setFormData] = useState({ institute: "", contact: "", email: "" });
   const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
   const [errors, setErrors] = useState<{ contact?: string; email?: string }>({});
@@ -246,7 +245,7 @@ export function Home() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div>
               <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-6">
-                Why Partner with Decode Solution?
+                Why Partner with Decode Solutions?
               </h2>
               <p className="text-lg text-slate-600 mb-8">
                 We act as an extension of your college's placement cell, providing specialized technical training that bridges the gap between academic curriculum and industry demands.
@@ -317,13 +316,10 @@ export function Home() {
           <p className="text-xl text-brand-100 mb-10 max-w-2xl mx-auto">
             Join the growing network of colleges that trust Decode Solutions for their students' technical training.
           </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <a href="#contact" className="w-full sm:w-auto px-8 py-4 bg-white text-brand-900 hover:bg-brand-50 rounded-xl font-bold text-lg transition-colors">
-              Contact Our Team
-            </a>
-            <a href="#brochure" className="w-full sm:w-auto px-8 py-4 bg-brand-800 text-white hover:bg-brand-700 border border-brand-700 rounded-xl font-bold text-lg transition-colors">
-              Download Brochure
-            </a>
+          <div className="flex items-center justify-center">
+            <button onClick={() => setProposalOpen(true)} className="w-full sm:w-auto px-8 py-4 bg-white text-brand-900 hover:bg-brand-50 rounded-xl font-bold text-lg transition-colors">
+              Partner with Us
+            </button>
           </div>
         </div>
       </section>
